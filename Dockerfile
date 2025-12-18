@@ -5,7 +5,7 @@ WORKDIR /home/gradle/src
 RUN gradle build --no-daemon -x test
 
 # Етап 2: Запуск (Використовуємо надійний образ Eclipse Temurin)
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 EXPOSE 8080
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app.jar"]
