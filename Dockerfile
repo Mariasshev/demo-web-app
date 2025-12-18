@@ -1,11 +1,22 @@
-# Етап 1: Збірка
-FROM gradle:8.5-jdk21 AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-RUN gradle build --no-daemon -x test
+# Етап 1: Збірка (на базі Ubuntu + Java 21)
+FROM eclipse-temurin:21-jdk-jammy AS build
+WORKDIR /app
 
-# Етап 2: Запуск (Використовуємо надійний образ Eclipse Temurin)
-FROM eclipse-temurin:21-jre
+# Копіюємо всі файли проекту
+COPY . .
+
+# 1. Встановлюємо утиліту для виправлення Windows-символів
+RUN apt-get update && apt-get install -y dos2unix
+
+# 2. Виправляємо файл gradlew і даємо права на запуск
+RUN dos2unix gradlew
+RUN chmod +x gradlew
+
+# 3. Запускаємо збірку через wrapper (найбезпечніший метод)
+RUN ./gradlew bootJar --no-daemon -x test
+
+# Етап 2: Запуск готового додатку
+FROM eclipse-temurin:21-jre-jammy
 EXPOSE 8080
-COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
+COPY --from=build /app/build/libs/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app.jar"]
